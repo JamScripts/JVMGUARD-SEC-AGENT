@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# JVMGuard runtime logs
+logs/*.jsonl
+logs/*.log
+
+# Local development backups
+*_backup.py
+agent_before_*.py
+agent_broken_*.py
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing/cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor backup files
+*.save
+*.bak
+*~
