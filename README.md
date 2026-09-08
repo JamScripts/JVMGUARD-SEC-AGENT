@@ -1,30 +1,26 @@
-JVMGuard is an experimental runtime security layer for AI agents.
+# JVMGuard
 
-The project explores how agent actions can be intercepted, inspected,
-risk-scored, authorized, blocked, and eventually logged before tools
-are allowed to execute.
+JVMGuard is an experimental runtime security layer for AI agents. It explores how agent-proposed tool actions can be intercepted, structured, risk-scored, authorized, blocked, and eventually logged before execution.
 
-JVMGuard is currently being developed as a local-first AI security lab
-using Python and Ollama.
+> Status: early-stage research prototype. APIs, policies, and risk rules will change as the project develops.
 
-## Current Version
+## Current version
 
-**JVMGuard v0.4.0**
+**v0.4.0**
 
-Current milestone:
+Current capabilities:
 
-- Local Ollama-powered AI agent
-- Agent tool calling
-- Runtime tool interception
-- Structured ActionRequest objects
-- User-goal capture
-- Source and trust metadata
-- Tool allowlisting
+- Local Ollama-powered agent
+- Tool calling with controller-owned execution authority
+- Runtime interception of proposed tool calls
+- Structured `ActionRequest` objects
+- User-goal, source, trust, and timestamp metadata
+- Explicit tool allowlisting
 - Deterministic risk scoring
 - Explainable risk reasons
-- Real system information tool
+- Real local system-information tool
 
-## Current Architecture
+## Security model
 
 ```text
 User
@@ -34,199 +30,146 @@ Local AI Agent
   |
   | proposes tool call
   v
-JVMGuard Interceptor
+JVMGuard Controller
   |
   v
 ActionRequest
   |
-  +-- Agent
-  +-- Tool
-  +-- Arguments
-  +-- User Goal
-  +-- Source
-  +-- Trust Level
-  +-- Timestamp
-  |
   v
 Deterministic Risk Engine
   |
-  +-- Risk Score
-  +-- Risk Level
-  +-- Reasons
-  |
   v
-Current Allowlist Policy
+Current Allowlist Check
   |
-  +-- ALLOW
+  +--> BLOCK unauthorized tools
   |
-  v
-Authorized Tool
+  +--> ALLOW authorized tools
+          |
+          v
+        Tool
+```
 
-The language model proposes actions.
+The language model may propose an action, but it does not directly own execution authority. JVMGuard's controller sits between the model and its tools.
 
-The language model does not directly own execution authority.
+In v0.4, the risk engine calculates risk independently from the language model. Risk score is not yet connected to the final policy decision; v0.5 will address that separately.
 
-JVMGuard's controller sits between the agent and its tools.
+## Requirements
 
-Example
+Current development target:
 
-A safe system-information request currently produces an interception
-similar to:
-
-JVMGUARD INTERCEPT
-
-Agent:       jvmguard-agent
-Tool:        get_system_info
-Arguments:   {}
-Source:      user
-Trust:       trusted
-
-Risk Score:  0/100
-Risk Level:  LOW
-
-Decision:    ALLOW
-Requirements
-
-The current version has been developed and tested on Arch Linux.
-
-You will need:
-
-Python 3.13
-uv
-Ollama
-Git
-Approximately 2 GB of free memory for the default development model
+- Python 3.13
+- `uv`
+- Ollama
+- Git
+- Arch Linux is the primary tested environment
 
 Other operating systems have not yet been fully tested.
 
-Installation
-1. Clone the repository
-git clone <repository-clone-url>
-cd JVMGuard
-2. Install or verify uv
-uv --version
+## Installation
 
-Install uv using its official installation documentation if it is not
-already available.
-
-3. Install Python
-
-The project currently targets Python 3.13.
-
+```bash
+git clone https://github.com/JamScripts/JVMGUARD-SEC-AGENT.git
+cd JVMGUARD-SEC-AGENT
 uv python install 3.13
-4. Install project dependencies
 uv sync
-5. Install and start Ollama
-
-Verify Ollama:
-
-ollama --version
-
-Make sure the Ollama server is running.
-
-6. Download the development model
 ollama pull qwen3.5:0.8b
+```
 
-Verify:
+Make sure the Ollama server is running, then start JVMGuard:
 
-ollama list
-7. Run JVMGuard
-uv run python agent.py
+```bash
+uv run jvmguard
+```
 
-You should see:
+You should see output similar to:
 
+```text
 JVMGuard v0.4.0
-Model: qwen3.5:0.8b
+Model:   qwen3.5:0.8b
 Backend: Ollama
+```
 
-Try:
+Example prompt:
 
+```text
 Inspect this computer and tell me the hostname and current time.
-Project Structure
-JVMGuard/
-├── agent.py
+```
+
+## Project structure
+
+```text
+JVMGUARD-SEC-AGENT/
+├── README.md
+├── SECURITY.md
+├── LICENSE
 ├── pyproject.toml
 ├── uv.lock
 ├── .python-version
-│
-├── security/
-│   ├── __init__.py
-│   ├── action.py
-│   └── risk.py
-│
-└── tools/
-    ├── __init__.py
-    └── system_info.py
-Risk Engine
+├── .gitignore
+├── src/
+│   └── jvmguard/
+│       ├── __init__.py
+│       ├── agent.py
+│       ├── security/
+│       │   ├── __init__.py
+│       │   ├── action.py
+│       │   └── risk.py
+│       └── tools/
+│           ├── __init__.py
+│           └── system_info.py
+├── tests/
+└── docs/
+    ├── architecture.md
+    └── threat-model.md
+```
 
-JVMGuard v0.4 uses deterministic Python rules rather than asking the
-language model to decide whether an action is safe.
+## v0.4 risk engine
 
-Current example signals include:
+Current deterministic signals include:
 
-Untrusted action source
-Sensitive resource references
-Dangerous tools
-Privilege escalation indicators
+- Untrusted action source
+- Sensitive-resource references
+- Dangerous tool capability
+- Privilege-escalation indicators
 
-Risk is currently classified as:
+Risk levels:
 
-0-24     LOW
-25-49    MEDIUM
-50-74    HIGH
-75-100   CRITICAL
+```text
+0-24    LOW
+25-49   MEDIUM
+50-74   HIGH
+75-100  CRITICAL
+```
 
-The current version calculates risk but does not yet enforce policy
-based directly on the risk score.
+The current version calculates risk but does not yet enforce policy directly from that score.
 
-Roadmap
-v0.5 — Policy Engine
+## Testing
 
-Convert risk assessments into execution decisions:
+Run the deterministic test suite with:
 
+```bash
+uv run python -m unittest discover -s tests -v
+```
+
+The Ollama connectivity check is treated as an integration test and requires a running local Ollama service.
+
+## Roadmap
+
+### v0.5 — Policy Engine
+
+Planned separately:
+
+```text
 LOW       -> ALLOW
 MEDIUM    -> WARN
 HIGH      -> REQUIRE_APPROVAL
 CRITICAL  -> BLOCK
-Planned Development
-Security event logging
-Read-only sandboxed filesystem tools
-Sensitive-resource classification
-Trust and provenance tracking
-Indirect prompt-injection detection
-Tool-output inspection
-Victim-agent testing
-Attacker-agent testing
-Protected vs. unprotected benchmarks
-Security evaluation datasets
-External agent integrations
-API / SDK
-Long-Term Goal
+```
 
-The target JVMGuard scenario is:
+Longer-term research areas include security event logging, sandboxed filesystem tools, provenance tracking, indirect prompt-injection detection, tool-output inspection, victim/attacker agent testing, benchmarks, evaluation datasets, external agent integrations, and an API/SDK.
 
-An AI agent consumes malicious instructions through an indirect prompt
-injection, attempts a dangerous tool action, and JVMGuard intercepts the
-action before execution, evaluates its provenance and risk, blocks it,
-explains why it was blocked, and records the security event.
+## Safety
 
-Safety
+Use synthetic credentials, synthetic secrets, sandboxed files, and controlled local environments. Do not test destructive actions against production systems or real credentials.
 
-JVMGuard is currently an experimental research and learning project.
-
-Current development should use:
-
-Synthetic credentials
-Synthetic secrets
-Sandboxed files
-Controlled local environments
-
-Do not test destructive actions against production systems or real
-credentials.
-
-Status
-
-Early-stage research prototype.
-
-The architecture, APIs, policies, and risk scoring system are expected
-to change significantly as the project develops.
+See `SECURITY.md` and `docs/threat-model.md` for the current research boundaries.
