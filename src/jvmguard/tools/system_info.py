@@ -1,10 +1,9 @@
-import os
 import platform
 import socket
 from datetime import datetime
 
 
-def get_system_info():
+def get_system_info() -> dict[str, str]:
     """Return basic information about the local system."""
 
     return {
@@ -13,10 +12,5 @@ def get_system_info():
         "kernel": platform.release(),
         "architecture": platform.machine(),
         "processor": platform.processor(),
-        
         "current_time": datetime.now().astimezone().isoformat(),
     }
-
-
-if __name__ == "__main__":
-    print(get_system_info())

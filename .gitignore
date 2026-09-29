@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.egg-info/
+build/
+dist/
 
 # Virtual environments
 .venv/
@@ -10,6 +13,7 @@ venv/
 # Environment variables / secrets
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 
